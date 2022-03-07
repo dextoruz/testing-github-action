@@ -1,0 +1,35 @@
+name: CI
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.5.1
+          bundler-cache: true
+      - uses: actions/cache@v2
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gems-
+
+      - name: Run Rubocop
+        run: bundle exec rubocop
+
+
+      - name: Get PR labels
+        if: always()
+        id: pr-labels
+        uses: joerick/pr-labels-action@v1.0.6
+
+      - name: Checking no labels
+        if: ${{ steps.pr-labels.outputs.labels == '' }}
+        run: echo "Disable merge option"
+
